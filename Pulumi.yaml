@@ -1,4 +1,4 @@
-name: tdc-2020-twilio-cicd
+name: twilio-pulumi-example
 runtime: nodejs
 description: Twilio resources
 main: example/src/resources
