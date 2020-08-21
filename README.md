@@ -1,6 +1,6 @@
 # Twilio Dynamic Provider 
 
-Experimental Twilio Dynamic Provider for Pulumi. The goal of this repository is to show how Twilio projects could be described as code.
+Experimental Twilio Dynamic Provider for Pulumi. The goal of this repository is to show how Twilio projects could be described as code and used in a CI/CD pipeline.
 
 ## Twilio
 
