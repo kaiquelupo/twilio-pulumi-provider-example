@@ -1,0 +1,4 @@
+name: tdc-2020-twilio-cicd
+runtime: nodejs
+description: Twilio resources
+main: example/src/resources
