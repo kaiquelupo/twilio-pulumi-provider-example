@@ -1,6 +1,6 @@
 # Twilio Dynamic Provider for Pulumi: Example of Implementation
 
-This repository presents an example on how to use the [twilio-pulumi-provider package](https://www.npmjs.com/package/twilio-pulumi-provider) to describe as code Twilio Project and use it in a CI/CD pipeline (this last part is not required). Also, by following this approach, handling different environments in Twilio (staging, production etc) becomes quite simple. 
+This repository presents an example on how to use the [twilio-pulumi-provider package](https://www.npmjs.com/package/twilio-pulumi-provider) to describe as code your Twilio Project and use it in a CI/CD pipeline (this last part is not required). Also, by following this approach, handling different environments in Twilio (staging, production etc) becomes quite simple. 
 
 For more info about concepts and technical decisions, please refer to the [package repo](https://github.com/kaiquelupo/twilio-pulumi-provider). 
 
