@@ -1,4 +1,4 @@
-name: twilio-pulumi-example
+name: twilio-pulumi-provider-example
 runtime: nodejs
 description: Twilio resources
-main: example/src/resources
+main: src/resources

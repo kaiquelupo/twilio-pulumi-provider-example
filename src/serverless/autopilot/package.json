@@ -1,5 +1,5 @@
 {
-  "name": "cicd-example",
+  "name": "example-autopilot-serverless",
   "version": "0.0.0",
   "private": true,
   "scripts": {

@@ -1,6 +1,8 @@
-# Twilio Dynamic Provider 
+# Twilio Dynamic Provider for Pulumi: Example of Implementation
 
-Experimental Twilio Dynamic Provider for Pulumi. The goal of this repository is to show how Twilio projects could be described as code and used in a CI/CD pipeline.
+This repository presents an example on how to use the [twilio-pulumi-provider package](https://www.npmjs.com/package/twilio-pulumi-provider) to describe as code Twilio Project and use it in a CI/CD pipeline (this last part is not required). Also, by following this approach, handling different environments in Twilio (staging, production etc) becomes quite simple. 
+
+For more info about concepts and technical decisions, please refer to the [package repo](https://github.com/kaiquelupo/twilio-pulumi-provider). 
 
 ## Twilio
 
@@ -47,10 +49,6 @@ There are different ways of creating providers inside Pulumi but for this projec
 
 **Note**: it is probably better to implement a actual provider in the long term but to this repository goal, the dynamic provider is enough. Let me know about your thoughts on that! :D 
 
-## Implementation
-
-The directory `twilioPulumiPlugin` has the actual Twilio Dynamic Provider implementaion. The main part of this implementation is the file `twilioPulumiPlugin/common/index.ts` which implements the a Resource for the Dynamic Provider. The idea is that with one resource, we can pass the attributes in such way that we can acess the whole Twilio API. Therefore, we don't need to create a resource per API endpoint. For functions/assets and plugins, the main files would be `twilioPulumiPlugin/serverless/index.ts` and `twilioPulumiPlugin/flexPlugins/index.ts` respectively.
-
 ## How to Use
 
 1. Create you Pulumi project file by copying the example (`cp Pulumi.example.yaml Pulumi.yaml`) and setting name, runtime (keep as it is) and description.
@@ -61,19 +59,15 @@ The directory `twilioPulumiPlugin` has the actual Twilio Dynamic Provider implem
 - TWILIO_<BRANCH_NAME>_ACCOUNT_SID
 - TWILIO_<BRANCH_NAME>_AUTH_TOKEN
 
-2. For development environment, you will inject the TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and BRANCH_NAME to the `npm run ci:preview-re
-sources` to preview the changes or to `npm run ci:deploy-re
-sources` to deploy those changes. Following is an example:  
+2. For development environment, you should copy the .dev.env.example (`cp .dev.env.example .dev.env`) and fill out the variables. Also, do not forget to add `.dev.env` files to all your serverless directories. After that, you can run the package scripts without the `ci:` in the beginning of their names. For example: 
 
-```
-TWILIO_ACCOUNT_SID=ACXXXXXXXXXXXXXXXXX TWILIO_AUTH_TOKEN=XXXXXXXXXXXX BRANCH_NAME=staging npm run ci:preview-resources
-```
+- **deploy-resources**: deploy all resources to your dev project
+- **preview-resources**: preview all changes to your dev project
+- **watch-resources**: this sends all changes to your dev project on the fly (as soon as the changes are saved in the file). It is similar to a `hot reload` feature and in my opinion it is **an amazing feature for developing and testing without using the console at all!**
 
 If you want to test different branches locally, you can change the environment variables for each branch. Remember, the idea is that each branch/stack is a different Twilio Project (but you can change this abstraction depending on your use case). 
 
-Also, to check for some changes on the code, the changed files are sent throught the FILES enviroment variable in a CI/CD environment. If you want to mimic that in the development environment, add this variables separating each file path by space.
-
-4. For describing your infrastructure, you can use the example on the `example` folder. **Remember:** if you deploy the example file, it may incur cost from Twilio side.    
+**Remember:** if you deploy this repository, it may incur cost from Twilio side.    
 
 ## CI/CD with Pulumi
 

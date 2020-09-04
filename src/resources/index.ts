@@ -1,12 +1,14 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as twilio from '../../../twilioPulumiPlugin';
+import { CheckServerless, Resource, Serverless, FlexPlugins, pulumi } from 'twilio-pulumi-provider';
 
 const stack = pulumi.getStack();
-const serviceName = 'pulumi-serverless-example';
 
-const domain = twilio.CheckServerless.getDomainName(serviceName, stack);
+const serviceName = 'example-serverless';
+const domain = CheckServerless.getDomainName(serviceName, stack);
 
-const flexWorkspace = new twilio.Resource("flex-workspace", {
+const autopilotServiceName = 'example-autopilot-serverless';
+const autopilotDomain = CheckServerless.getDomainName(autopilotServiceName, stack);
+
+const flexWorkspace = new Resource("flex-workspace", {
     resource: ["taskrouter", "workspaces"],
     attributes: {
         sid: process.env.FLEX_WORKFLOW_SID,
@@ -14,14 +16,14 @@ const flexWorkspace = new twilio.Resource("flex-workspace", {
     }
 });
 
-const workspace = new twilio.Resource("pulumi-workspace", {
+const workspace = new Resource("example-workspace", {
     resource: ["taskrouter", "workspaces"],
     attributes: {
-        friendlyName: "Pulumi Workspace"
+        friendlyName: "Example Pulumi Workspace"
     }
 });
 
-const englishTaskQueue = new twilio.Resource("pulumi-english-taskQueue", {
+const englishTaskQueue = new Resource("example-english-taskQueue", {
     resource: ["taskrouter", { "workspaces" : workspace.sid }, "taskQueues"],
     attributes: {
         targetWorkers: `languages HAS "english"`,
@@ -29,7 +31,7 @@ const englishTaskQueue = new twilio.Resource("pulumi-english-taskQueue", {
     }
 });
 
-const spanishTaskQueue = new twilio.Resource("pulumi-spanish-taskQueue", {
+const spanishTaskQueue = new Resource("example-spanish-taskQueue", {
     resource: ["taskrouter", { "workspaces" : workspace.sid }, "taskQueues"],
     attributes: {
         targetWorkers: `languages HAS "spanish"`,
@@ -37,7 +39,7 @@ const spanishTaskQueue = new twilio.Resource("pulumi-spanish-taskQueue", {
     }
 });
 
-const worker = new twilio.Resource("pulumi-worker", {
+const worker = new Resource("example-worker", {
     resource: ["taskrouter", { "workspaces" : workspace.sid }, "workers"],
     attributes: {
         friendlyName: 'Worker 1',
@@ -45,11 +47,10 @@ const worker = new twilio.Resource("pulumi-worker", {
     }
 });
 
-const workflow = new twilio.Resource("pulumi-workflow", {
+const workflow = new Resource("example-workflow", {
     resource: ["taskrouter", { "workspaces" : workspace.sid }, "workflows"],
     attributes: {
         assignmentCallbackUrl: pulumi.all([domain]).apply(([ domain ]) => `https://${domain}/hello-world`),
-        fallbackAssignmentCallbackUrl: 'https://example2.com/',
         friendlyName: 'Sales, Marketing, Support Workflow',
         configuration: pulumi.all([englishTaskQueue.sid, spanishTaskQueue.sid])
             .apply(([ englishTaskQueueSid, spanishTaskQueueSid ]) => JSON.stringify(
@@ -66,6 +67,7 @@ const workflow = new twilio.Resource("pulumi-workflow", {
                                 ]
                             },
                             {
+                                friendlyName: "Spanish Queue",
                                 targets:[
                                     { 
                                         queue: spanishTaskQueueSid
@@ -80,7 +82,7 @@ const workflow = new twilio.Resource("pulumi-workflow", {
     },
 });
 
-const flow = new twilio.Resource("pulumi-studio", {
+const flow = new Resource("example-studio", {
     resource: ["studio", "flows"],
     attributes: {
         commitMessage: 'Release v4', 
@@ -155,16 +157,17 @@ const flow = new twilio.Resource("pulumi-studio", {
     }
 });
             
-const serverless = new twilio.Serverless("functions-assets", {
+const serverless = new Serverless("example-functions-assets", {
     attributes: {
-        cwd: `../serverless`,
+        cwd: `../serverless/main`,
         serviceName,          
         envPath: `.${stack}.env`,
-        functionsEnv: stack
+        functionsEnv: stack,
+        pkgJson: require("../serverless/main/package.json")
     }
 });
  
-const flexPlugins = new twilio.FlexPlugins("flex-plugins", { 
+const flexPlugins = new FlexPlugins("example-flex-plugins", { 
     attributes: {
         cwd: "../flex-plugins",
         env: pulumi.all([domain]).apply(([ domain ]) => (
@@ -175,6 +178,128 @@ const flexPlugins = new twilio.FlexPlugins("flex-plugins", {
     }
 });
 
+
+const assistant = new Resource("example-autopilot-assistant", {
+    resource: ["autopilot", "assistants"],
+    attributes: {
+        uniqueName: "example-assistant",
+        friendlyName: "Example Assistant"
+    }
+});
+
+const greetingTask = new Resource("example-autopilot-task", {
+    resource: ["autopilot", { assistants: assistant.sid }, "tasks"],
+    attributes: {
+      uniqueName: "greeting",
+      friendlyName: "Greeting Task",
+      actions: pulumi.all([autopilotDomain]).apply(([autopilotDomain]) => ({
+        actions: [
+          {
+            redirect: {
+              method: "POST",
+              uri: `https://${autopilotDomain}/get-context`
+            }
+          }
+        ]
+      }))
+    }
+});
+
+const samples = ["hey", "hello", "how are you?", "are you ok?"];
+const taskSamples : Resource[]= [];
+
+for(let i = 0; i < samples.length; i++) {
+
+    taskSamples.push(new Resource(`example-autopilot-task-sample-${samples[i]}`, {
+        resource: ['autopilot', { assistants: assistant.sid }, { tasks: greetingTask.sid }, 'samples'],
+        attributes: {
+            language: 'en-US',
+            taggedText: samples[i]
+        }
+    }));
+
+}
+
+
+const catalogTask = new Resource("autopilot-catalog-task", {
+  resource: ["autopilot", { assistants: assistant.sid }, "tasks"],
+  attributes: {
+    uniqueName: "catalog",
+    friendlyName: "Catalog",
+    actions: pulumi.all([autopilotDomain]).apply(([autopilotDomain]) => ({
+      actions: [
+        {
+          redirect: {
+            method: "POST",
+            uri: `https://${autopilotDomain}/get-catalog`
+          }
+        }
+      ]
+    }))
+  }
+});
+
+
+const samplesCatalog = ["see the catalog", "catalog", "I want to see the catalog"];
+
+for(let i = 0; i < samplesCatalog.length; i++) {
+
+    taskSamples.push(new Resource(`example-autopilot-catalog-task-sample-${samplesCatalog[i]}`, {
+        resource: ['autopilot', { assistants: assistant.sid }, { tasks: catalogTask.sid }, 'samples'],
+        attributes: {
+            language: 'en-US',
+            taggedText: samplesCatalog[i]
+        }
+    }));
+}
+
+const aboutTask = new Resource("autopilot-about-task", {
+    resource: ["autopilot", { assistants: assistant.sid }, "tasks"],
+    attributes: {
+      uniqueName: "about",
+      friendlyName: "About",
+      actions: pulumi.all([autopilotDomain]).apply(([autopilotDomain]) => ({
+        actions: [
+          {
+            redirect: {
+              method: "POST",
+              uri: `https://${autopilotDomain}/explain`
+            }
+          }
+        ]
+      }))
+    }
+  });
+  
+  
+const samplesAbout = ["how this app works", "what is this?", "tell me about the app"];
+
+for(let i = 0; i < samplesAbout.length; i++) {
+
+    taskSamples.push(new Resource(`example-autopilot-about-task-sample-${samplesAbout[i]}`, {
+        resource: ['autopilot', { assistants: assistant.sid }, { tasks: aboutTask.sid }, 'samples'],
+        attributes: {
+            language: 'en-US',
+            taggedText: samplesAbout[i]
+        }
+    }));
+
+}
+
+const autopilotServerless = new Serverless("autopilot-serverless", {
+    attributes: {
+      cwd: `../serverless/autopilot`,
+      serviceName: autopilotServiceName,
+      env: {
+        DOMAIN: autopilotDomain
+      },          
+      envPath: `.${stack}.env`,
+      functionsEnv: stack,
+      pkgJson: require("../serverless/autopilot/package.json")
+    }
+  });
+
+
 export let output =  {
     flexWorkspaceSid: flexWorkspace.sid,
     workspaceSid: workspace.sid,
@@ -184,5 +309,6 @@ export let output =  {
     workflowSid: workflow.sid,
     flowSid: flow.sid,
     serverlessSid: serverless.sid,
+    autopilotServerlessSid: autopilotServerless.sid,
     flexPluginsServiceSid: flexPlugins.sid
 }
