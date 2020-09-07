@@ -1,4 +1,5 @@
-import { CheckServerless, Resource, Serverless, FlexPlugins, pulumi } from 'twilio-pulumi-provider';
+import { CheckServerless, Resource, Serverless, FlexPlugin } from 'twilio-pulumi-provider';
+import * as pulumi from '@pulumi/pulumi';
 
 const stack = pulumi.getStack();
 
@@ -167,24 +168,26 @@ const serverless = new Serverless("example-functions-assets", {
     }
 });
  
-const flexPlugins = new FlexPlugins("example-flex-plugins", { 
+const soundNotificationFlexPlugin = new FlexPlugin("example-sound-notification-flex-plugin", { 
     attributes: {
-        cwd: "../flex-plugins",
+        cwd: "../flex-plugins/sound-notification",
         env: pulumi.all([domain]).apply(([ domain ]) => (
             {
                 REACT_APP_SERVERLESS_DOMAIN_NAME: domain
             }
-        ))
+        )),
+        runTestsOnPreview: true
     }
 });
-
 
 const assistant = new Resource("example-autopilot-assistant", {
     resource: ["autopilot", "assistants"],
     attributes: {
-        uniqueName: "example-assistant",
-        friendlyName: "Example Assistant"
+        uniqueName: "example-assistant-2",
+        friendlyName: "Example Assistant 2"
     }
+},{
+    protect: true
 });
 
 const greetingTask = new Resource("example-autopilot-task", {
@@ -272,7 +275,12 @@ const aboutTask = new Resource("autopilot-about-task", {
   });
   
   
-const samplesAbout = ["how this app works", "what is this?", "tell me about the app"];
+const samplesAbout = [
+    "how this app works", 
+    "what is this?", 
+    "tell me about the app", 
+    "explain to me what this app does"
+];
 
 for(let i = 0; i < samplesAbout.length; i++) {
 
@@ -297,8 +305,16 @@ const autopilotServerless = new Serverless("autopilot-serverless", {
       functionsEnv: stack,
       pkgJson: require("../serverless/autopilot/package.json")
     }
-  });
+});
 
+const modelBuild = new Resource('assistant-build-model', {
+    resource: ['autopilot', { assistants: assistant.sid }, 'modelBuilds'],
+    attributes: {
+        replaceAndNotDelete: true
+    }
+}, {
+    dependsOn: taskSamples
+});
 
 export let output =  {
     flexWorkspaceSid: flexWorkspace.sid,
@@ -310,5 +326,6 @@ export let output =  {
     flowSid: flow.sid,
     serverlessSid: serverless.sid,
     autopilotServerlessSid: autopilotServerless.sid,
-    flexPluginsServiceSid: flexPlugins.sid
+    soundNotificationFlexPluginSid: soundNotificationFlexPlugin.sid,
+    modelBuildSid: modelBuild.sid
 }

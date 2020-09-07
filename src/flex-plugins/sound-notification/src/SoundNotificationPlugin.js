@@ -12,7 +12,7 @@ export default class AlertTask extends FlexPlugin {
 
   init(flex, manager) {
 
-    console.log("SoundNotificationPlugin!");
+    console.log("SoundNotificationPlugin :D !!");
 
     const audio = new Audio(`https://${process.env.REACT_APP_SERVERLESS_DOMAIN_NAME}/sound-notification/ringback_tone.mp3`);
     manager.workerClient.on('reservationCreated', reservation => {
