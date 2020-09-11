@@ -1,4 +1,4 @@
-import { CheckServerless, Resource, Serverless, FlexPlugin } from 'twilio-pulumi-provider';
+import { CheckServerless, Resource, Serverless, FlexPlugin, Studio } from 'twilio-pulumi-provider';
 import * as pulumi from '@pulumi/pulumi';
 
 const stack = pulumi.getStack();
@@ -20,12 +20,12 @@ const flexWorkspace = new Resource("flex-workspace", {
 const workspace = new Resource("example-workspace", {
     resource: ["taskrouter", "workspaces"],
     attributes: {
-        friendlyName: "Example Pulumi Workspace"
+        friendlyName: "Example Pulumi Workspace!"
     }
 });
 
 const englishTaskQueue = new Resource("example-english-taskQueue", {
-    resource: ["taskrouter", { "workspaces" : workspace.sid }, "taskQueues"],
+    resource: ["taskrouter", { "workspaces" : flexWorkspace.sid }, "taskQueues"],
     attributes: {
         targetWorkers: `languages HAS "english"`,
         friendlyName: 'English Queue'
@@ -33,7 +33,7 @@ const englishTaskQueue = new Resource("example-english-taskQueue", {
 });
 
 const spanishTaskQueue = new Resource("example-spanish-taskQueue", {
-    resource: ["taskrouter", { "workspaces" : workspace.sid }, "taskQueues"],
+    resource: ["taskrouter", { "workspaces" : flexWorkspace.sid }, "taskQueues"],
     attributes: {
         targetWorkers: `languages HAS "spanish"`,
         friendlyName: 'Spanish Queue'
@@ -41,7 +41,7 @@ const spanishTaskQueue = new Resource("example-spanish-taskQueue", {
 });
 
 const worker = new Resource("example-worker", {
-    resource: ["taskrouter", { "workspaces" : workspace.sid }, "workers"],
+    resource: ["taskrouter", { "workspaces" : flexWorkspace.sid }, "workers"],
     attributes: {
         friendlyName: 'Worker 1',
         attributes: JSON.stringify({ email: "worker1@email.com", languages: ["english", "spanish"] })
@@ -49,7 +49,7 @@ const worker = new Resource("example-worker", {
 });
 
 const workflow = new Resource("example-workflow", {
-    resource: ["taskrouter", { "workspaces" : workspace.sid }, "workflows"],
+    resource: ["taskrouter", { "workspaces" : flexWorkspace.sid }, "workflows"],
     attributes: {
         assignmentCallbackUrl: pulumi.all([domain]).apply(([ domain ]) => `https://${domain}/hello-world`),
         friendlyName: 'Sales, Marketing, Support Workflow',
@@ -86,8 +86,8 @@ const workflow = new Resource("example-workflow", {
 const flow = new Resource("example-studio", {
     resource: ["studio", "flows"],
     attributes: {
-        commitMessage: 'Release v4', 
-        friendlyName: 'A New Flow v4',
+        commitMessage: 'Release v5', 
+        friendlyName: 'A New Flow v5',
         definition: {
             description: 'A New Flow',
             states: [
@@ -155,6 +155,64 @@ const flow = new Resource("example-studio", {
             }
         }, 
         status: 'published'
+    }
+});
+
+const environmentFlow = new Resource("example-environment-studio", {
+    resource: ["studio", "flows"],
+    attributes: {
+        commitMessage: "Release of revision 18", 
+        friendlyName: 'A New Flow v6',
+        status: 'published',
+        definition: pulumi.all([workflow.sid]).apply(([workflowSid]) => 
+            Studio.getStudioFlowDefinition({
+                environment: "staging",
+                flowSid: "FW89b843cec6a2682fcc429529fca3a134",
+                revision: "24"
+            },{
+                transformations: [
+                    {
+                        name: "changeWidgetProps",
+                        widgets: ["say_play_3"],
+                        exec: props => {
+                            props.properties.say = "Hello world from transformation!";
+                        }
+                    },
+                    {
+                        name: "changeWidgetProps",
+                        types: ["send-to-flex"],
+                        exec: props => {
+                            props.properties.workflow =  workflowSid
+                        }
+                    },
+                    definition => {
+                        return {
+                            ...definition,
+                        states: [
+                            ...definition.states,
+                            {
+                                "name": "Copy_of_say_play_4",
+                                "type": "say-play",
+                                "transitions": [
+                                {
+                                    "event": "audioComplete"
+                                }
+                                ],
+                                "properties": {
+                                "offset": {
+                                    "x": 200,
+                                    "y": 1500
+                                },
+                                "loop": 1,
+                                "say": "Hello world 4"
+                                }
+                            }
+                        ]
+                        }
+                    }
+                ]
+            })
+        )
     }
 });
             
@@ -307,15 +365,6 @@ const autopilotServerless = new Serverless("autopilot-serverless", {
     }
 });
 
-const modelBuild = new Resource('assistant-build-model', {
-    resource: ['autopilot', { assistants: assistant.sid }, 'modelBuilds'],
-    attributes: {
-        replaceAndNotDelete: true
-    }
-}, {
-    dependsOn: taskSamples
-});
-
 export let output =  {
     flexWorkspaceSid: flexWorkspace.sid,
     workspaceSid: workspace.sid,
@@ -324,8 +373,8 @@ export let output =  {
     workerSid: worker.sid,
     workflowSid: workflow.sid,
     flowSid: flow.sid,
+    environmentFlowSid: environmentFlow.sid,
     serverlessSid: serverless.sid,
     autopilotServerlessSid: autopilotServerless.sid,
-    soundNotificationFlexPluginSid: soundNotificationFlexPlugin.sid,
-    modelBuildSid: modelBuild.sid
+    soundNotificationFlexPluginSid: soundNotificationFlexPlugin.sid
 }

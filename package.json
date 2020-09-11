@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@pulumi/pulumi": "^2.0.0",
-    "twilio-pulumi-provider": "^0.0.5"
+    "twilio-pulumi-provider": "^0.0.6"
   },
   "devDependencies": {
     "@types/node": "^14.6.4",
