@@ -51,21 +51,29 @@ There are different ways of creating providers inside Pulumi but for this projec
 
 ## How to Use
 
-1. Create you Pulumi project file by copying the example (`cp Pulumi.example.yaml Pulumi.yaml`) and setting name, runtime (keep as it is) and description.
+Before starting make sure you login with your Pulumi CLI. 
+
+1. Create you Pulumi project file by copying the example (`cp Pulumi.example.yaml Pulumi.yaml`) and setting `name`, `runtime` (keep as it is) and `description`.
+
+2. For development environment, you should copy the .dev.env.example (`cp .dev.env.example .dev.env`) and fill out the variables: 
+
+* `FLEX_WORKSPACE_SID`: This is the SID of the "Flex Task Assignment" TaskRouter Workspace in your Flex project
+* `BRANCH_NAME`: This is the name you want to give to the Pulumi stack (e.g. `dev`)
+
+3. Create two files called `.<BRANCH_NAME>.env` in  `serverless/autopilot` and `serverless/main`, where `BRACH_NAME` is the value of the variable set above. These files holds configuration for autoppilot and serverless. For this example you can leave them blank. 
+
+4. You can now run the package scripts without the `ci:` in the beginning of their names. For example: 
+
+- **deploy-resources**: deploy all resources to your dev project
+- **preview-resources**: preview all changes to your dev project
+- **watch-resources**: this sends all changes to your dev project on the fly (as soon as the changes are saved in the file). It is similar to a `hot reload` feature and in my opinion it is **an amazing feature for developing and testing without using the console at all!**
+If you want to test different branches locally, you can change the environment variables for each branch. Remember, the idea is that each branch/stack is a different Twilio Project (but you can change this abstraction depending on your use case). 
 
 3. For CI/CD environments, you need to add same environment variables to your secrets in your system. In the case of `GitHub Actions`, you can use `Secrets` as described [here](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets). The mapping is as following:
 
 - PULUMI_ACCESS_TOKEN
 - TWILIO_<BRANCH_NAME>_ACCOUNT_SID
 - TWILIO_<BRANCH_NAME>_AUTH_TOKEN
-
-2. For development environment, you should copy the .dev.env.example (`cp .dev.env.example .dev.env`) and fill out the variables. Also, do not forget to add `.dev.env` files to all your serverless directories. After that, you can run the package scripts without the `ci:` in the beginning of their names. For example: 
-
-- **deploy-resources**: deploy all resources to your dev project
-- **preview-resources**: preview all changes to your dev project
-- **watch-resources**: this sends all changes to your dev project on the fly (as soon as the changes are saved in the file). It is similar to a `hot reload` feature and in my opinion it is **an amazing feature for developing and testing without using the console at all!**
-
-If you want to test different branches locally, you can change the environment variables for each branch. Remember, the idea is that each branch/stack is a different Twilio Project (but you can change this abstraction depending on your use case). 
 
 **Remember:** if you deploy this repository, it may incur cost from Twilio side.    
 
