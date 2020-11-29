@@ -12,7 +12,7 @@ const autopilotDomain = CheckServerless.getDomainName(autopilotServiceName, stac
 const flexWorkspace = new Resource("flex-workspace", {
     resource: ["taskrouter", "workspaces"],
     attributes: {
-        sid: process.env.FLEX_WORKFLOW_SID,
+        sid: process.env.FLEX_WORKSPACE_SID,
         eventCallbackUrl: pulumi.all([domain]).apply(([ domain ]) => `https://${domain}/hello-world`)
     }
 });
@@ -241,7 +241,7 @@ const soundNotificationFlexPlugin = new FlexPlugin("example-sound-notification-f
 const assistant = new Resource("example-autopilot-assistant", {
     resource: ["autopilot", "assistants"],
     attributes: {
-        uniqueName: "example-assistant-2",
+        uniqueName: "example-assistant-3",
         friendlyName: "Example Assistant 2"
     }
 },{
