@@ -241,8 +241,8 @@ const soundNotificationFlexPlugin = new FlexPlugin("example-sound-notification-f
 const assistant = new Resource("example-autopilot-assistant", {
     resource: ["autopilot", "assistants"],
     attributes: {
-        uniqueName: "example-assistant-3",
-        friendlyName: "Example Assistant 2"
+        uniqueName: "example-assistant",
+        friendlyName: "Example Assistant"
     }
 },{
     protect: true
